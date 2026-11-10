@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cutei pie</title>
+    <style>
+        /* --------------------------------------------------
+           👉 CHANGE YOUR SECRET MESSAGE HERE 👈
+        -------------------------------------------------- */
+        :root {
+            --secret-message: "love you buddy! at least you tried.";
+            --pink-bg-color: #ffc2d1;
+        }
+
+        /* Reset and Background */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffe5ec, var(--pink-bg-color));
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Container */
+        .scene {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Borderless/Bubbleless Text Container */
+        .speech-bubble {
+            background: transparent; /* Removed bubble background */
+            padding: 15px 25px;
+            font-size: 1.4rem; /* Slightly larger for better readability */
+            font-weight: bold;
+            color: #ff4d6d;
+            margin-bottom: 70px;
+            position: relative;
+            animation: floatBubble 3s ease-in-out infinite;
+            pointer-events: none;
+            max-width: 320px;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px; /* Space between words */
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.6); /* Soft glow so text pops */
+            
+            /* Hidden by default until holding */
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        /* Revealed class triggered by JS */
+        .speech-bubble.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Smooth "Slipping" Word Animation */
+        .word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(15px) scale(0.9);
+            animation: slipIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+        }
+
+        /* The Cartoon Character */
+        .character {
+            width: 140px;
+            height: 160px;
+            background: #ffffff;
+            border-radius: 70px 70px 20px 20px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            animation: bounce 3s ease-in-out infinite;
+            z-index: 2;
+            touch-action: none;
+        }
+
+        /* Kissing state */
+        .character.kissing {
+            animation: rapidKiss 0.4s ease-in-out;
+        }
+
+        /* Eyes */
+        .eyes {
+            position: absolute;
+            top: 45%;
+            width: 80px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .eye {
+            width: 16px;
+            height: 16px;
+            background: #2b2d42;
+            border-radius: 50%;
+            position: relative;
+            animation: blink 4s infinite;
+        }
+
+        .character.kissing .eye {
+            height: 5px;
+            border-radius: 0;
+            background: transparent;
+            border-top: 4px solid #2b2d42;
+            animation: none;
+            transform: rotate(-10deg);
+        }
+        .character.kissing .eye:last-child {
+            transform: rotate(10deg);
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+        }
+        .character.kissing .eye::after { display: none; }
+
+        /* Blush Cheeks */
+        .cheeks {
+            position: absolute;
+            top: 55%;
+            width: 110px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .cheek {
+            width: 18px;
+            height: 10px;
+            background: #ffb3c1;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        /* Mouth */
+        .mouth {
+            width: 20px;
+            height: 10px;
+            border-bottom: 4px solid #2b2d42;
+            border-radius: 0 0 10px 10px;
+            position: absolute;
+            top: 55%;
+        }
+
+        .character.kissing .mouth {
+            width: 12px;
+            height: 14px;
+            border: 4px solid #2b2d42;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            transform: rotate(-90deg);
+            background: transparent;
+            top: 52%;
+        }
+
+        /* Shadow */
+        .shadow {
+            width: 100px;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            margin-top: 20px;
+            animation: shadowScale 3s ease-in-out infinite;
+        }
+
+        /* 💘 Floating Heart Emojis */
+        .heart-emoji {
+            position: absolute;
+            font-size: 2rem;
+            background: linear-gradient(var(--pink-bg-color), var(--pink-bg-color));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.15)); 
+            pointer-events: none;
+            z-index: 3;
+            animation: floatHeart 0.8s ease-out forwards;
+        }
+
+        /* --------------------------------------------------
+           Animations
+        -------------------------------------------------- */
+        @keyframes slipIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(-20px) scaleY(1.03); }
+        }
+
+        @keyframes rapidKiss {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.15) translateY(-10px); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes floatBubble {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes shadowScale {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        @keyframes floatHeart {
+            0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            15% { opacity: 1; }
+            100% { opacity: 0; transform: translate(var(--x-dest), var(--y-dest)) scale(1.3) rotate(var(--r-dest)); }
+        }
+
+        /* 🔢 Countdown number above the character */
+        .counter {
+            position: absolute;
+            top: -52px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+        }
+        .counter span {
+            display: inline-block;
+            min-width: 54px;
+            padding: 2px 14px;
+            font-size: 1.9rem;
+            font-weight: bold;
+            color: #ff4d6d;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(255, 77, 109, 0.2);
+        }
+        .counter span.pop { animation: numPop 0.3s ease-out; }
+        @keyframes numPop {
+            0% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        /* 💥 Blow up */
+        .character.exploding {
+            animation: explode 0.7s ease-in forwards;
+            pointer-events: none;
+        }
+        @keyframes explode {
+            0%   { transform: scale(1) rotate(0); }
+            15%  { transform: scale(1.1) rotate(-6deg); }
+            30%  { transform: scale(1.2) rotate(6deg); }
+            45%  { transform: scale(1.3) rotate(-8deg); }
+            60%  { transform: scale(1.45) rotate(8deg); opacity: 1; }
+            100% { transform: scale(2.6); opacity: 0; }
+        }
+
+        /* Love-emoji cover + hidden birthday text */
+        #loveCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            touch-action: none;
+            transition: opacity 0.9s ease;
+        }
+        .birthday-text {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 5;
+            font-size: clamp(2.6rem, 12vw, 5.5rem);
+            font-weight: bold;
+            color: #ff4d6d;
+            text-shadow: 0 3px 8px rgba(255, 255, 255, 0.8);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .birthday-text.ready { opacity: 1; }
+        .birthday-text.celebrate { animation: bdayPop 0.8s ease-out; }
+        @keyframes bdayPop {
+            0% { transform: scale(0.8); }
+            60% { transform: scale(1.12); }
+            100% { transform: scale(1); }
+        }
+        .wipe-hint {
+            position: fixed;
+            bottom: 8%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 11;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 0 2px 6px rgba(255, 77, 109, 0.9);
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="birthday-text" id="birthdayText">Happy birthday,Kutia😘</div>
+
+    <div class="scene">
+        <div class="speech-bubble" id="speechBubble"></div>
+
+        <div class="character" id="cartoonCharacter">
+            <div class="eyes">
+                <div class="eye"></div>
+                <div class="eye"></div>
+            </div>
+            <div class="cheeks">
+                <div class="cheek"></div>
+                <div class="cheek"></div>
+            </div>
+            <div class="mouth"></div>
+            <div class="counter"><span id="counterNum">21</span></div>
+        </div>
+
+        <div class="shadow"></div>
+    </div>
+
+    <script>
+        const character = document.getElementById('cartoonCharacter');
+        const bubble = document.getElementById('speechBubble');
+
+        // Read the message from CSS
+        const fullMessage = getComputedStyle(document.documentElement).getPropertyValue('--secret-message').replace(/"/g, '').trim();
+        const wordsArray = fullMessage.split(' ');
+        
+        const counterNum = document.getElementById('counterNum');
+        const birthdayText = document.getElementById('birthdayText');
+        let remaining = 21;
+        let exploded = false;
+        let typingInterval = null;
+        let currentWordIndex = 0;
+
+        function startHolding(e) {
+            if (e) e.preventDefault();
+            if (exploded) return;
+
+            // Count down
+            remaining--;
+            counterNum.textContent = remaining;
+            counterNum.classList.remove('pop');
+            void counterNum.offsetWidth;
+            counterNum.classList.add('pop');
+            if (remaining <= 0) {
+                stopHolding();
+                explode();
+                return;
+            }
+
+            // Fire kiss effect
+            character.classList.add('kissing');
+            for (let i = 0; i < 5; i++) {
+                createHeart();
+            }
+            setTimeout(() => character.classList.remove('kissing'), 400);
+
+            // Clear previous states
+            stopHolding(); 
+            bubble.classList.add('show');
+            bubble.innerHTML = '';
+            currentWordIndex = 0;
+
+            // Generate words with individual slip animations (320ms per word)
+            typingInterval = setInterval(() => {
+                if (currentWordIndex < wordsArray.length) {
+                    const wordSpan = document.createElement('span');
+                    wordSpan.classList.add('word');
+                    wordSpan.innerText = wordsArray[currentWordIndex];
+                    
+                    bubble.appendChild(wordSpan);
+                    currentWordIndex++;
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 320); 
+        }
+
+        function stopHolding() {
+            clearInterval(typingInterval);
+            bubble.classList.remove('show');
+            bubble.innerHTML = '';
+        }
+
+        // Mouse Controls
+        character.addEventListener('mousedown', startHolding);
+        window.addEventListener('mouseup', stopHolding);
+
+        // Touch Controls
+        character.addEventListener('touchstart', startHolding);
+        window.addEventListener('touchend', stopHolding);
+        window.addEventListener('touchcancel', stopHolding);
+
+        // Heart generation helper
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-emoji');
+            heart.innerText = '❤';
+
+            heart.style.left = '60px'; 
+            heart.style.top = '85px';
+
+            const xDestination = (Math.random() * 160 - 80) + 'px';
+            const yDestination = -(Math.random() * 120 + 60) + 'px';
+            const rotationDestination = (Math.random() * 60 - 30) + 'deg';
+
+            heart.style.setProperty('--x-dest', xDestination);
+            heart.style.setProperty('--y-dest', yDestination);
+            heart.style.setProperty('--r-dest', rotationDestination);
+
+            character.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 800);
+        }
+
+        // 💥 Blow up the character, then flood the screen with hearts
+        function explode() {
+            exploded = true;
+            character.classList.add('exploding');
+            const shadow = document.querySelector('.shadow');
+            shadow.style.animation = 'none';
+            shadow.style.transition = 'opacity 0.4s';
+            shadow.style.opacity = '0';
+            setTimeout(fillScreenWithHearts, 600);
+        }
+
+        function fillScreenWithHearts() {
+            const dpr = window.devicePixelRatio || 1;
+            const W = window.innerWidth, H = window.innerHeight;
+            const cv = document.createElement('canvas');
+            cv.id = 'loveCanvas';
+            cv.width = W * dpr;
+            cv.height = H * dpr;
+            document.body.appendChild(cv);
+            const ctx = cv.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Hearts on a grid (with jitter), spreading out from the centre
+            // Same heart as the one the cartoon kisses with
+            const hearts = ['❤'];
+            const step = 34;
+            const cx = W / 2, cy = H / 2;
+            const cells = [];
+            for (let y = -step; y < H + step; y += step) {
+                for (let x = -step; x < W + step; x += step) {
+                    const px = x + step / 2 + (Math.random() * 12 - 6);
+                    const py = y + step / 2 + (Math.random() * 12 - 6);
+                    cells.push({ x: px, y: py, d: Math.hypot(px - cx, py - cy) });
+                }
+            }
+            cells.sort((a, b) => a.d - b.d);
+
+            let i = 0;
+            const perFrame = Math.ceil(cells.length / 70);
+            function drawBatch() {
+                for (let n = 0; n < perFrame && i < cells.length; n++, i++) {
+                    const c = cells[i];
+                    ctx.font = (step * (0.95 + Math.random() * 0.35)) + 'px serif';
+                    // same look as the kiss hearts: pink fill + soft drop shadow
+                    ctx.fillStyle = '#ffc2d1';
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 2;
+                    ctx.fillText(hearts[Math.floor(Math.random() * hearts.length)], c.x, c.y);
+                }
+                if (i < cells.length) {
+                    requestAnimationFrame(drawBatch);
+                } else {
+                    // reset the shadow so the pink layer and the wiping are unaffected
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetY = 0;
+
+                    // solid pink layer behind the hearts so the text stays hidden
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = '#ffc2d1';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.globalCompositeOperation = 'destination-out';
+                    birthdayText.classList.add('ready');
+                    enableWiping(cv, ctx, W, H);
+                }
+            }
+            drawBatch();
+        }
+
+        // 🧽 Swipe to clean the hearts and reveal the text underneath
+        function enableWiping(cv, ctx, W, H) {
+            const hint = document.createElement('div');
+            hint.className = 'wipe-hint';
+            hint.textContent = 'swipe to clean the love 💕';
+            document.body.appendChild(hint);
+
+            const brush = 42;
+            const cell = 24;
+            const cols = Math.ceil(W / cell), rows = Math.ceil(H / cell);
+            const cleaned = new Uint8Array(cols * rows);
+            let cleanedCount = 0, done = false, last = null, drawing = false;
+
+            function mark(x, y) {
+                const r = Math.ceil(brush / cell);
+                const gx = Math.floor(x / cell), gy = Math.floor(y / cell);
+                for (let yy = gy - r; yy <= gy + r; yy++) {
+                    for (let xx = gx - r; xx <= gx + r; xx++) {
+                        if (xx < 0 || yy < 0 || xx >= cols || yy >= rows) continue;
+                        if (Math.hypot((xx + 0.5) * cell - x, (yy + 0.5) * cell - y) > brush) continue;
+                        const k = yy * cols + xx;
+                        if (!cleaned[k]) { cleaned[k] = 1; cleanedCount++; }
+                    }
+                }
+            }
+
+            function wipe(e) {
+                if (!drawing || done) return;
+                const x = e.clientX, y = e.clientY;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = brush * 2;
+                ctx.beginPath();
+                ctx.moveTo(last ? last.x : x, last ? last.y : y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                mark(x, y);
+                last = { x, y };
+                hint.style.opacity = '0';
+
+                if (cleanedCount / (cols * rows) > 0.45) {
+                    done = true;
+                    cv.style.opacity = '0';
+                    birthdayText.classList.add('celebrate');
+                    setTimeout(() => { cv.remove(); hint.remove(); }, 1000);
+                }
+            }
+
+            cv.addEventListener('pointerdown', e => { drawing = true; last = null; cv.setPointerCapture(e.pointerId); wipe(e); });
+            cv.addEventListener('pointermove', wipe);
+            cv.addEventListener('pointerup', () => { drawing = false; last = null; });
+            cv.addEventListener('pointercancel', () => { drawing = false; last = null; });
+        }
+    </script>
+
+</body>
+</html>
